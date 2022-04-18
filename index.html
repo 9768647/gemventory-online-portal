@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-control" content="public">
+    <title>Gemventory</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://kit.fontawesome.com/50a41ddaf8.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/asura.css">
+    <!--    <link rel="stylesheet" href="css/login-register.css"/>-->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.16/dist/sweetalert2.all.min.js"></script>
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+
+</head>
+<body class="body">
+
+<!--Login Modal-->
+<div class="registerModal center-block">
+    <div class="row">
+        <div class="borders15 whiteBack marginAuto registerProp col-10 col-sm-8 col-md-6 col-lg-4 col-xl-3">
+            <div class="text-center">
+                <div class="col-sm-12 col-lg-12 col-md-12 text-center">
+                    <img id="logo" class="img-fluid center-block">
+                </div>
+            </div>
+            <div class="center-block" style="margin-top: -10px">
+                <!--                    <form id="formLogin" data-toggle="loginValidator">-->
+                <div class="text-center">
+                    <br>
+
+                    <div class="text-center  col-10 col-sm-10 col-md-8 col-lg-8 col-xl-8"
+                         style="margin: auto; padding: 0px">
+                        <button id="buttonLogin" onclick="$(location).attr('href','login.html');" type="button"
+                                class="btn  d-inline-block buttonLogin "> &nbsp;Log in
+                        </button>
+                        <button id="buttonSignUp" onclick="$(location).attr('href','createAccountWelcome.html');"
+                                type="button" class="btn d-inline-block inline buttonLogin "> &nbsp;Sign Up
+                        </button>
+                    </div>
+                    <br>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<div id="loading" class="loading">
+    <div style="margin-top:25%" align="center">
+        <img src='img/waiting.gif' style="width: 120px">
+    </div>
+</div>
+
+</body>
+
+<script>
+
+    function changePassword() {
+        var at = getCookie("accessToken" + document.getElementById('inputLoginUsername').value);
+        var changePasswordRequest = {};
+        changePasswordRequest.currentPassword = document.getElementById('inputLoginPassword').value;
+        changePasswordRequest.newPassword = document.getElementById('confirmNewPassword').value;
+
+        $.ajax({
+            type: "PUT",
+            crossDomain: true,
+            url: conf.urlChangePassword + "?api-key=" + conf.apikey,
+            data: JSON.stringify(changePasswordRequest),
+            headers: {
+                "content-type": "application/json",
+                "tenantName": conf.tenantName,
+                "api-key": conf.apikey,
+                "Authorization": "Bearer " + at,
+            },
+            success: function (result) {
+                loginAuth(document.getElementById('inputLoginUsername').value, document.getElementById('confirmNewPassword').value, "login");
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: JSON.stringify(xhr.responseJSON.contextResponse.additionalStatusMessage),
+                    icon: 'error',
+                    confirmButtonText: 'Close'
+                })
+
+            }
+        })
+
+
+    }
+
+
+    function createAccountFull() {
+
+        /*  private String timeZoneFormatted;
+            */
+        document.getElementById("messages").style.display = "none";
+        var firstName = document.getElementById('fistName');
+        var lastName = document.getElementById('lastName');
+        var email = document.getElementById('email');
+        var registerPh = document.getElementById('registerPhone');
+
+        if (firstName.value === '') {
+            $("#messagesText").text("Please fill the first name.");
+            document.getElementById("messages").style.display = "block";
+            $('#fistName').focus();
+            return;
+        } else if (lastName.value === '') {
+            $("#messagesText").text("Please fill the last name.");
+            document.getElementById("messages").style.display = "block";
+            $('#lastName').focus();
+            return;
+        }
+        if (registerCredentialType === "EMAIL") {
+            if (email.value === '') {
+                $("#messagesText").text("Please fill the email");
+                document.getElementById("messages").style.display = "block";
+                $('#email').focus();
+                return;
+            } else if (validateEmail(email.value) === false) {
+                $("#messagesText").text("Please fill with a valid email.");
+                document.getElementById("messages").style.display = "block";
+                return;
+            }
+        } else {
+            if (registerPh.value === '') {
+                $("#messagesText").text("Please fill the phone number");
+                document.getElementById("messages").style.display = "block";
+                $('#registerPhone').focus();
+                return;
+            } else if (!validNumberRegister) {
+                $("#messagesText").text("Please fill with a valid phone number.");
+                document.getElementById("messages").style.display = "block";
+                return;
+            }
+        }
+
+        if ($("#password_confirmation").val().length < minPasswordLength) {
+            $("#messagesText").text("Password is too short. Minimum 8 characters.");
+            document.getElementById("messages").style.display = "block";
+            return;
+        } else if ($("#password_confirmation").val() != $("#registerPassword").val()) {
+            $("#messagesText").text("Password and Confirm must be same.");
+            document.getElementById("messages").style.display = "block";
+            return;
+        } else if (document.getElementById("letter").classList.contains("invalid") || document.getElementById("capital").classList.contains("invalid")
+            || document.getElementById("number").classList.contains("invalid") || document.getElementById("length").classList.contains("invalid")) {
+            $("#messagesText").text("Password does not match the format. Letter + capital + number and 8 characters length.");
+            document.getElementById("messages").style.display = "block";
+            return;
+        } else {
+            document.getElementById("messages").style.display = "none";
+            var registerJson = {};
+            registerJson.firstName = document.getElementById('fistName').value;
+            registerJson.lastName = document.getElementById('lastName').value;
+            registerJson.password = document.getElementById('registerPassword').value;
+            if (registerCredentialType === "EMAIL") {
+                registerJson.username = document.getElementById('email').value;
+            } else {
+                //registerJson.username = replaceAllCharacters(registerNumber, " ", "%20");
+                registerJson.username = registerNumber;
+            }
+
+            registerJson.preferredLanguage = "en";
+            registerJson.timeZoneFormatted = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            registerJson.verified = false;
+            registerJson.contactType = registerCredentialType;
+            registerFull(registerJson);
+        }
+    }
+
+</script>
+
+<script src="js/jquery-3.3.1.js"></script>
+<script>
+    $('#phoneDIv').hide();
+    $('#phoneRegisterDIv').hide();
+    $('#phoneValidateDIv').hide();
+</script>
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+
+<script type="text/javascript" language="javascript" src="js/libphonenumber-js.min.js"></script>
+
+
+<script type="text/javascript">
+    var loginNUmber = "";
+    var registerNumber = "";
+    var validateNumber = "";
+    var credentialType = "EMAIL";
+    var registerCredentialType = "EMAIL";
+    var validateType = "EMAIL";
+    var validNumber = false;
+    var validNumberRegister = false;
+    var validNumberValidate = false;
+
+
+    var input = document.querySelector("#phone");
+    var inputRegister = document.querySelector("#registerPhone");
+    var inputRegisterValidate = document.querySelector("#registerPhoneForValidate");
+    var sva;
+    window.location.href = "login.html";
+
+</script>
+</html>
